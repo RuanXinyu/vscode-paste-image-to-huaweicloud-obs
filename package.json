@@ -1,0 +1,158 @@
+{
+  "name": "vscode-paste-image-to-huaweicloud-obs",
+  "displayName": "vscode-paste-image-to-huaweicloud-obs",
+  "description": "paste image to huaweicloud obs of vscode extension",
+  "version": "1.0.0",
+  "publisher": "RuanXinyu",
+  "author": {
+    "name": "RuanXinyu",
+    "email": "1096421257@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RuanXinyu/vscode-paste-image-to-huaweicloud-obs.git"
+  },
+  "homepage": "https://github.com/RuanXinyu/vscode-paste-image-to-huaweicloud-obs/blob/master/README.md",
+  "bugs": {
+    "url": "https://github.com/RuanXinyu/vscode-paste-image-to-huaweicloud-obs/issues"
+  },
+  "keywords": [
+    "paste",
+    "image",
+    "markdown",
+    "paste image",
+    "huaweicloud-obs",
+    "hexo"
+  ],
+  "engines": {
+    "vscode": "^1.27.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.pasteImageToHuaweiCloudOBS"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Paste Image Configuration",
+      "properties": {
+        "pasteImage.path": {
+          "type": "string",
+          "default": "${currentFileDir}",
+          "description": "The destination to save image file.You can use variable ${currentFileDir} and ${projectRoot}. ${currentFileDir} will be replace by the path of directory that contain current editing file. ${projectRoot} will be replace by path of the project opened in vscode."
+        },
+        "pasteImage.basePath": {
+          "type": "string",
+          "default": "${currentFileDir}",
+          "description": "The base path of image url.You can use variable ${currentFileDir} and ${projectRoot}. ${currentFileDir} will be replace by the path of directory that contain current editing file. ${projectRoot} will be replace by path of the project opened in vscode. If you set basePath to empty String, it will insert absolute path to file."
+        },
+        "pasteImage.forceUnixStyleSeparator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Force set the file separator styel to unix style. If set false, separator styel will follow the system style."
+        },
+        "pasteImage.prefix": {
+          "type": "string",
+          "default": "",
+          "description": "The string prepend to the resolved image path before paste."
+        },
+        "pasteImage.suffix": {
+          "type": "string",
+          "default": "",
+          "description": "The string append to the resolved image path before paste."
+        },
+        "pasteImage.defaultName": {
+          "type": "string",
+          "default": "Y-MM-DD-HH-mm-ss",
+          "description": "The default image file name. The value of this config will be pass to the 'format' function of moment library(a js time manipulation library), you can read document https://momentjs.com/docs/#/displaying/format/ for advanced usage."
+        },
+        "pasteImage.namePrefix": {
+          "type": "string",
+          "default": "",
+          "description": "The string prepend to the image file name."
+        },
+        "pasteImage.nameSuffix": {
+          "type": "string",
+          "default": "",
+          "description": "The string append to the image file name."
+        },
+        "pasteImage.encodePath": {
+          "type": "string",
+          "enum": [
+            "none",
+            "urlEncode",
+            "urlEncodeSpace"
+          ],
+          "default": "urlEncodeSpace",
+          "description": "The string append to the image file name.How to encode image path before insert to editor. Support options: none, urlEncode, urlEncodeSpace"
+        },
+        "pasteImage.insertPattern": {
+          "type": "string",
+          "default": "${imageSyntaxPrefix}${imageFilePath}${imageSyntaxSuffix}",
+          "description": "The pattern of string that would be pasted to text."
+        },
+        "pasteImage.obsServer": {
+          "type": "string",
+          "default": "https://obs.cn-north-1.myhwclouds.com",
+          "description": "The server of huaweicloud obs."
+        },
+        "pasteImage.obsBucket": {
+          "type": "string",
+          "default": "",
+          "description": "The bucket of huaweicloud obs, e.g. 'obs-2f97'"
+        },
+        "pasteImage.obsAccessKeyId": {
+          "type": "string",
+          "default": "",
+          "description": "The access key id of huaweicloud obs, e.g. 'R7DYQD3DQRRLTDWYttE3S'"
+        },
+        "pasteImage.obsSecretAccessKey": {
+          "type": "string",
+          "default": "",
+          "description": "The secret access key id of huaweicloud obs, e.g. 'TERHf0NGpDrbhsbc1h3xymB9w22wK8lLgOhdgFkgjCB2'"
+        },
+        "pasteImage.obsUploadDir": {
+          "type": "string",
+          "default": "/",
+          "description": "The directory of huaweicloud obs to upload"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "extension.pasteImageToHuaweiCloudOBS",
+        "title": "Paste Image"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "extension.pasteImageToHuaweiCloudOBS",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "dependencies": {
+    "copy-paste": "^1.2.0",
+    "fs-extra": "^3.0.1",
+    "moment": "^2.14.1",
+    "upath": "^1.0.0",
+    "huaweicloud-obs-sync": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.21",
+    "@types/node": "^8.10.25",
+    "@types/mocha": "^2.2.42"
+  }
+}
