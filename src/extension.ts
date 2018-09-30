@@ -6,8 +6,8 @@ import { spawn } from 'child_process';
 import * as moment from 'moment';
 import * as upath from 'upath';
 
-// var obsSync = require('huaweicloud-obs-sync');
 var fse = require('fs-extra');
+var obsSync = require('huaweicloud-obs-sync');
 
 class Logger {
     static channel: vscode.OutputChannel;
@@ -91,7 +91,6 @@ class Paster {
             return;
         }
         let filePath = fileUri.fsPath;
-        let folderPath = path.dirname(filePath);
         let projectPath = vscode.workspace.rootPath || "";
 
         // get selection as image file name, need check
@@ -181,7 +180,7 @@ class Paster {
                     return;
                 }
 
-                imagePath = this.renderFilePath(editor.document.languageId, this.basePathConfig, imagePath, this.forceUnixStyleSeparatorConfig, this.prefixConfig, this.suffixConfig);
+                imagePath = this.renderFilePath(this.insertPatternConfig, editor.document.languageId, this.basePathConfig, imagePath, this.forceUnixStyleSeparatorConfig, this.prefixConfig, this.suffixConfig);
 
                 editor.edit(edit => {
                     let current = editor.selection;
@@ -191,15 +190,19 @@ class Paster {
                     } else {
                         edit.replace(current, imagePath);
                     }
-                    
-                    // obsSync.syncFileToOBS({
-                    //     server : this.obsServerConfig,
-                    //     bucket: this.obsBucketConfig,
-                    //     accessKeyId: this.obsAccessKeyIdConfig,
-                    //     secretAccessKey: this.obsSecretAccessKeyConfig,
-                    //     localFileName: imagePath,
-                    //     remoteFileName: this.obsUploadDirConfig.replace(/(^\/*)|(\/*$)/g, "").replace(/(^\s*)|(\s*$)/g, "")
-                    // })
+                });
+            }, (imagePath) => {
+                this.obsUploadDirConfig = this.obsUploadDirConfig.replace(/(^\/*)|(\/*$)/g, "").replace(/(^\s*)|(\s*$)/g, "")
+                this.obsUploadDirConfig = this.renderFilePath(this.obsUploadDirConfig, editor.document.languageId, this.basePathConfig, imagePath, this.forceUnixStyleSeparatorConfig, this.prefixConfig, this.suffixConfig);
+                obsSync.syncFileToOBS({
+                    server : this.obsServerConfig,
+                    bucket: this.obsBucketConfig,
+                    accessKeyId: this.obsAccessKeyIdConfig,
+                    secretAccessKey: this.obsSecretAccessKeyConfig,
+                    localFileName: imagePath,
+                    remoteFileName: this.obsUploadDirConfig
+                }).then(() => {
+                    vscode.window.showInformationMessage('upload to huaweicloud obs success');
                 });
             });
         }).catch(err => {
@@ -267,13 +270,15 @@ class Paster {
     /**
      * use applescript to save image from clipboard and get file path
      */
-    private static saveClipboardImageToFileAndGetPath(imagePath: string, cb: (imagePath: string, imagePathFromScript: string) => void) {
+    private static saveClipboardImageToFileAndGetPath(imagePath: string, 
+        cbOn: (imagePath: string, imagePathFromScript: string) => void, 
+        cbExit: (imagePath: string) => void) {
         if (!imagePath) return;
 
         let platform = process.platform;
         if (platform === 'win32') {
             // Windows
-            const scriptPath = path.join(__dirname, '../../res/pc.ps1');
+            const scriptPath = path.join(__dirname, '../res/pc.ps1');
 
             let command = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
             let powershellExisted = fs.existsSync(command)
@@ -296,13 +301,14 @@ class Paster {
                     Logger.showErrorMessage(`The powershell command is not in you PATH environment variables.Please add it and retry.`);
                 } else {
                     Logger.showErrorMessage(e.message);
-                }
+                } 
             });
             powershell.on('exit', function (code, signal) {
-                // console.log('exit', code, signal);
+                // console.log('exit',code,signal);
+                cbExit(imagePath);
             });
             powershell.stdout.on('data', function (data: Buffer) {
-                cb(imagePath, data.toString().trim());
+                cbOn(imagePath, data.toString().trim());
             });
         }
         else if (platform === 'darwin') {
@@ -315,9 +321,10 @@ class Paster {
             });
             ascript.on('exit', function (code, signal) {
                 // console.log('exit',code,signal);
+                cbExit(imagePath);
             });
             ascript.stdout.on('data', function (data: Buffer) {
-                cb(imagePath, data.toString().trim());
+                cbOn(imagePath, data.toString().trim());
             });
         } else {
             // Linux 
@@ -330,6 +337,7 @@ class Paster {
             });
             ascript.on('exit', function (code, signal) {
                 // console.log('exit',code,signal);
+                cbExit(imagePath);
             });
             ascript.stdout.on('data', function (data: Buffer) {
                 let result = data.toString().trim();
@@ -337,7 +345,7 @@ class Paster {
                     Logger.showInformationMessage('You need to install xclip command first.');
                     return;
                 }
-                cb(imagePath, result);
+                cbOn(imagePath, result);
             });
         }
     }
@@ -346,7 +354,7 @@ class Paster {
      * render the image file path dependen on file type
      * e.g. in markdown image file path will render to ![](path)
      */
-    public static renderFilePath(languageId: string, basePath: string, imageFilePath: string, forceUnixStyleSeparator: boolean, prefix: string, suffix: string): string {
+    public static renderFilePath(formatStr: string, languageId: string, basePath: string, imageFilePath: string, forceUnixStyleSeparator: boolean, prefix: string, suffix: string): string {
         if (basePath) {
             imageFilePath = path.relative(basePath, imageFilePath);
         }
@@ -381,16 +389,15 @@ class Paster {
                 break;
         }
 
-        let result = this.insertPatternConfig
-        result = result.replace(this.PATH_VARIABLE_IMAGE_SYNTAX_PREFIX, imageSyntaxPrefix);
-        result = result.replace(this.PATH_VARIABLE_IMAGE_SYNTAX_SUFFIX, imageSyntaxSuffix);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_SYNTAX_PREFIX, imageSyntaxPrefix);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_SYNTAX_SUFFIX, imageSyntaxSuffix);
 
-        result = result.replace(this.PATH_VARIABLE_IMAGE_FILE_PATH, imageFilePath);
-        result = result.replace(this.PATH_VARIABLE_IMAGE_ORIGINAL_FILE_PATH, originalImagePath);
-        result = result.replace(this.PATH_VARIABLE_IMAGE_FILE_NAME, fileName);
-        result = result.replace(this.PATH_VARIABLE_IMAGE_FILE_NAME_WITHOUT_EXT, fileNameWithoutExt);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_FILE_PATH, imageFilePath);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_ORIGINAL_FILE_PATH, originalImagePath);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_FILE_NAME, fileName);
+        formatStr = formatStr.replace(this.PATH_VARIABLE_IMAGE_FILE_NAME_WITHOUT_EXT, fileNameWithoutExt);
 
-        return result;
+        return formatStr;
     }
 
     public static replacePathVariable(pathStr: string, projectRoot: string, curFilePath: string, postFunction: (string: string) => string = (x) => x): string {
