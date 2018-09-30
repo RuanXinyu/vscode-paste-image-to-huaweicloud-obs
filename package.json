@@ -94,6 +94,11 @@
           "default": "${imageSyntaxPrefix}${imageFilePath}${imageSyntaxSuffix}",
           "description": "The pattern of string that would be pasted to text."
         },
+        "pasteImage.obsEnable": {
+          "type": "string",
+          "default": "yes",
+          "description": "Enable the function of uploadinf file to huaweicloud obs."
+        },
         "pasteImage.obsServer": {
           "type": "string",
           "default": "https://obs.cn-north-1.myhwclouds.com",
@@ -116,7 +121,7 @@
         },
         "pasteImage.obsUploadDir": {
           "type": "string",
-          "default": "/",
+          "default": "${currentFileNameWithoutExt}/${imageFileName}",
           "description": "The directory of huaweicloud obs to upload"
         }
       }

@@ -73,6 +73,7 @@ class Paster {
     static namePrefixConfig: string;
     static nameSuffixConfig: string;
     static insertPatternConfig: string;
+    static obsEnableConfig: string;
     static obsServerConfig: string;
     static obsBucketConfig: string;
     static obsAccessKeyIdConfig: string;
@@ -134,6 +135,7 @@ class Paster {
         this.namePrefixConfig = vscode.workspace.getConfiguration('pasteImage')['namePrefix'];
         this.nameSuffixConfig = vscode.workspace.getConfiguration('pasteImage')['nameSuffix'];
         this.insertPatternConfig = vscode.workspace.getConfiguration('pasteImage')['insertPattern'];
+        this.obsEnableConfig = vscode.workspace.getConfiguration('pasteImage')['obsEnable'];
         this.obsServerConfig = vscode.workspace.getConfiguration('pasteImage')['obsServer'];
         this.obsBucketConfig = vscode.workspace.getConfiguration('pasteImage')['obsBucket'];
         this.obsAccessKeyIdConfig = vscode.workspace.getConfiguration('pasteImage')['obsAccessKeyId'];
@@ -192,6 +194,11 @@ class Paster {
                     }
                 });
             }, (imagePath) => {
+                if (this.obsEnableConfig != "yes") {
+                    return;
+                }
+
+                Logger.showInformationMessage("uploading file to huaweicloud obs ...");
                 this.obsUploadDirConfig = this.obsUploadDirConfig.replace(/(^\/*)|(\/*$)/g, "").replace(/(^\s*)|(\s*$)/g, "")
                 this.obsUploadDirConfig = this.renderFilePath(this.obsUploadDirConfig, editor.document.languageId, this.basePathConfig, imagePath, this.forceUnixStyleSeparatorConfig, this.prefixConfig, this.suffixConfig);
                 obsSync.syncFileToOBS({
@@ -202,6 +209,7 @@ class Paster {
                     localFileName: imagePath,
                     remoteFileName: this.obsUploadDirConfig
                 }).then(() => {
+                    Logger.showInformationMessage("uploading file to huaweicloud obs success");
                     vscode.window.showInformationMessage('upload to huaweicloud obs success');
                 });
             });
