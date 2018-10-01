@@ -150,14 +150,16 @@
   "dependencies": {
     "copy-paste": "^1.2.0",
     "fs-extra": "^3.0.1",
+    "huaweicloud-obs-sync": "^1.0.0",
+    "ignore-walk": "^3.0.1",
     "moment": "^2.14.1",
-    "upath": "^1.0.0",
-    "huaweicloud-obs-sync": "^1.0.0"
+    "upath": "^1.0.0"
   },
   "devDependencies": {
-    "typescript": "^2.6.1",
-    "vscode": "^1.1.21",
+    "@types/mocha": "^2.2.42",
     "@types/node": "^8.10.25",
-    "@types/mocha": "^2.2.42"
+    "ignore-walk": "^3.0.1",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.21"
   }
 }
